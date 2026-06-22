@@ -9,6 +9,8 @@ on:
       - 'src/**'
       - 'pom.xml'
       - '.github/workflows/ci.yaml'
+      - '.github/workflows/cd.yaml'
+      - ./terraform
 
 jobs:
   gitleaks-scan:
