@@ -1,4 +1,4 @@
-# Trigger Test-1
+# Trigger Test
 name: Bankapp DevSecOps CICD Pipeline
 
 on:
