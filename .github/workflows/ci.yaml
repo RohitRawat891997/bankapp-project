@@ -227,6 +227,6 @@ jobs:
             ${{ vars.DOCKERHUB_USERNAME }}/bankapp:latest
 
     deploy:
-        needs: [frontend,backend]
-        uses: ./.github/workflows/cd.yml
+        needs: docker
+        uses: ./.github/workflows/cd.yaml
         secrets: inherit
