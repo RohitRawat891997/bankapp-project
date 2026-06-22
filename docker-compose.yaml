@@ -3,7 +3,7 @@ services:
     image: mysql:8.0
     container_name: mysql
     env_file:
-      - .env
+      - .env.example
 
     environment:
       MYSQL_DATABASE: ${DB_NAME}
@@ -34,7 +34,7 @@ services:
     container_name: bankapp
 
     env_file:
-      - .env
+      - .env.example
 
     depends_on:
       mysql:
