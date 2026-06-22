@@ -8,7 +8,7 @@ on:
     paths:
       - 'src/**'
       - 'pom.xml'
-      - '.github/workflows/cicd.yaml'
+      - '.github/workflows/ci.yaml'
 
 jobs:
   gitleaks-scan:
