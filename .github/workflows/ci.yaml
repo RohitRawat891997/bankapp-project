@@ -226,7 +226,7 @@ jobs:
             ${{ vars.DOCKERHUB_USERNAME }}/bankapp:${{ github.sha }}
             ${{ vars.DOCKERHUB_USERNAME }}/bankapp:latest
 
-    deploy:
-        needs: docker
-        uses: ./.github/workflows/cd.yaml
-        secrets: inherit
+  deploy:
+      needs: docker
+      uses: ./.github/workflows/cd.yaml
+      secrets: inherit
