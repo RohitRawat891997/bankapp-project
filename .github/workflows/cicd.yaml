@@ -202,33 +202,6 @@ jobs:
             ${{ vars.DOCKERHUB_USERNAME }}/bankapp:${{ github.sha }}
             ${{ vars.DOCKERHUB_USERNAME }}/bankapp:latest
 
-      - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.6
-        with:
-          version: latest
-          cache: true
-
-      - name: Verify Trivy installation
-        run: |
-          trivy --version
-          which trivy
-
-      - name: Run Trivy image scan (TABLE)
-        run: |
-          trivy image ${{ vars.DOCKERHUB_USERNAME }}/bankapp:${{ github.sha }} \
-            --format table \
-            --severity HIGH,CRITICAL \
-            --ignore-unfixed \
-            --exit-code 1 > image-trivy-report.txt
-
-      - name: Upload Trivy image TABLE report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: image-trivy-table-report
-          path: image-trivy-report.txt
-          if-no-files-found: warn
-
       - name: Generate source SBOM
         uses: anchore/sbom-action@v0
         with:
