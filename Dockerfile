@@ -4,6 +4,7 @@ FROM maven:3.9.9-eclipse-temurin-17-alpine AS builder
 WORKDIR /app
 
 # Copy source code
+COPY  .env.example   .env
 COPY . .
 
 # Build application
