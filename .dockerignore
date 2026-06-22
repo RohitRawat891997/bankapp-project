@@ -1,0 +1,20 @@
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose.yml
+
+# Maven build output
+target/
+
+# Security files
+*.pem
+*.key
+*.crt
+
+# Documentation
+README.md
+docs/
