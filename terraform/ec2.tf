@@ -1,82 +1,140 @@
 
-# Key Value pair
+# ============================================
+# Key Pair
+# ============================================
 
-resource aws_key_pair my_key_pair {
-
-key_name="terra-automate-key-josh"
-public_key=file("terra-automate-key.pub")
-} 
-
-# VPC Default
-
-resource aws_default_vpc default {
+resource "aws_key_pair" "my_key_pair" {
+  key_name   = "terra-automate-key-josh"
+  public_key = file("terra-automate-key.pub")
 }
 
-# Security Group 
+# ============================================
+# Default VPC
+# ============================================
 
-resource aws_security_group my_security_group {
+#checkov:skip=CKV_AWS_148: Using default VPC for learning project
 
-name="terra-security-group"
-vpc_id= aws_default_vpc.default.id  # interpolation
-description = "this is Inbound and outbound rules for your instance Security group"
+resource "aws_default_vpc" "default" {}
 
+# ============================================
+# Security Group
+# ============================================
+
+resource "aws_security_group" "my_security_group" {
+  name        = "${var.my_environment}-security-group"
+  vpc_id      = aws_default_vpc.default.id
+  description = "Inbound and outbound rules for EC2 instance"
 }
 
-# Inbound & Outbount port rules
+# ============================================
+# Ingress Rules
+# ============================================
 
-
-
-resource aws_vpc_security_group_ingress_rule allow_http {
+resource "aws_vpc_security_group_ingress_rule" "allow_http" {
   security_group_id = aws_security_group.my_security_group.id
-  cidr_ipv4         = "0.0.0.0/0"
+  description       = "Allow BankApp HTTP Traffic"
+  cidr_ipv4         = "103.181.90.188/32"
   from_port         = 8080
-  ip_protocol       = "tcp"
   to_port           = 8080
-}
-
-resource aws_vpc_security_group_ingress_rule allow_ssh {
-  security_group_id = aws_security_group.my_security_group.id
-  cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 22
   ip_protocol       = "tcp"
-  to_port           = 22
 }
 
-
-resource aws_vpc_security_group_egress_rule allow_all_traffic {
+resource "aws_vpc_security_group_ingress_rule" "allow_ssh" {
   security_group_id = aws_security_group.my_security_group.id
-  cidr_ipv4         = "0.0.0.0/0"
-  ip_protocol       = "-1" # semantically equivalent to all ports
+  description       = "Allow SSH from my laptop"
+  cidr_ipv4         = "103.181.90.188/32"
+  from_port         = 22
+  to_port           = 22
+  ip_protocol       = "tcp"
 }
 
+# ============================================
+# Egress Rules
+# ============================================
 
-# EC2 instance
+resource "aws_vpc_security_group_egress_rule" "allow_all_traffic" {
+  security_group_id = aws_security_group.my_security_group.id
+  description       = "Allow outbound traffic"
+  cidr_ipv4         = "0.0.0.0/0"
+  ip_protocol       = "-1"
+}
 
+# ============================================
+# IAM Role
+# ============================================
 
-resource aws_instance "my_instance" {
+resource "aws_iam_role" "ec2_role" {
+  name = "${var.my_environment}-BankAppEC2Role"
 
-	ami = "ami-0f8a61b66d1accaee" # OS AMI ID
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
 
-	instance_type = "t3.micro" # Instance Type
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
 
-	key_name = aws_key_pair.my_key_pair.key_name	# Key pair
+        Action = "sts:AssumeRole"
+      }
+    ]
+  })
+}
+
+# ============================================
+# IAM Policy Attachment
+# ============================================
+
+resource "aws_iam_role_policy_attachment" "ssm" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+# ============================================
+# IAM Instance Profile
+# ============================================
+
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "${var.my_environment}-BankAppInstanceProfile"
+  role = aws_iam_role.ec2_role.name
+}
+
+# ============================================
+# EC2 Instance
+# ============================================
+
+resource "aws_instance" "my_instance" {
+
+  ami                  = var.ami_id
+  instance_type        = var.instance_type
+  key_name             = aws_key_pair.my_key_pair.key_name
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+
+  ebs_optimized = true
+  monitoring    = true
 
   depends_on = [
     aws_key_pair.my_key_pair
   ]
 
-	vpc_security_group_ids = [aws_security_group.my_security_group.id] # VPC & Security Group
+  metadata_options {
+    http_tokens = "required"
+  }
+
+  vpc_security_group_ids = [
+    aws_security_group.my_security_group.id
+  ]
 
   user_data = file("script.sh")
-	
-	# root storage (EBS)
-	root_block_device {
-		volume_size = 30
 
-		volume_type = "gp3"
-	}
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp3"
+  }
 
-	tags = {
-    Name = "terra-automate-server"
+  tags = {
+    Name        = "${var.my_environment}-terra-automate-server"
+    Environment = var.my_environment
   }
 }
