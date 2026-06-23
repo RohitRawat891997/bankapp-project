@@ -10,7 +10,7 @@ on:
       - 'pom.xml'
       - '.github/workflows/ci.yaml'
       - '.github/workflows/cd.yaml'
-      - 'terraform'
+      - 'terraform/**'
 
 jobs:
   gitleaks-scan:
