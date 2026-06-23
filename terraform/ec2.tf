@@ -48,14 +48,14 @@ resource "aws_vpc_security_group_ingress_rule" "allow_http" {
   ip_protocol       = "tcp"
 }
 
-#resource "aws_vpc_security_group_ingress_rule" "allow_ssh" {
-#  security_group_id = aws_security_group.my_security_group.id
-#  description       = "Allow SSH from my laptop"
-#  cidr_ipv4         = "103.181.90.188/32"
-#  from_port         = 22
-#  to_port           = 22
-#  ip_protocol       = "tcp"
-#}
+resource "aws_vpc_security_group_ingress_rule" "allow_ssh" {
+  security_group_id = aws_security_group.my_security_group.id
+  description       = "Allow SSH from my laptop"
+  cidr_ipv4         = "103.181.90.188/32"
+  from_port         = 22
+  to_port           = 22
+  ip_protocol       = "tcp"
+}
 
 # ============================================
 # Egress Rules
