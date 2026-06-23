@@ -8,13 +8,6 @@ resource "aws_key_pair" "my_key_pair" {
   public_key = file("terra-automate-key.pub")
 }
 
-# ============================================
-# Default VPC
-# ============================================
-
-#checkov:skip=CKV_AWS_148: Using default VPC for learning project
-
-resource "aws_default_vpc" "default" {}
 
 # ============================================
 # Security Group
@@ -22,7 +15,7 @@ resource "aws_default_vpc" "default" {}
 
 resource "aws_security_group" "my_security_group" {
   name        = "${var.my_environment}-security-group"
-  vpc_id      = aws_default_vpc.default.id
+  vpc_id      = aws_vpc.main.id
   description = "Inbound and outbound rules for EC2 instance"
 }
 
@@ -110,6 +103,7 @@ resource "aws_instance" "my_instance" {
   instance_type        = var.instance_type
   key_name             = aws_key_pair.my_key_pair.key_name
   iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
+  subnet_id            = aws_subnet.public.id
 
   ebs_optimized = true
   monitoring    = true
