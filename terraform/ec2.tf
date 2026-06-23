@@ -1,3 +1,4 @@
+#checkov:skip=CKV2_AWS_11: VPC Flow Logs not required for learning project
 
 # ============================================
 # Key Pair
@@ -6,6 +7,21 @@
 resource "aws_key_pair" "my_key_pair" {
   key_name   = "terra-automate-key-josh"
   public_key = file("terra-automate-key.pub")
+}
+
+# ============================================
+# Default Security Group
+# ============================================
+
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.main.id
+
+  ingress = []
+  egress  = []
+
+  tags = {
+    Name = "default-sg"
+  }
 }
 
 
