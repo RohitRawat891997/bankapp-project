@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - kubernetes
     paths:
       - 'src/**'
       - 'pom.xml'
@@ -228,6 +227,8 @@ jobs:
           tags: |
             ${{ vars.DOCKERHUB_USERNAME }}/bankapp:${{ github.sha }}
             ${{ vars.DOCKERHUB_USERNAME }}/bankapp:latest
+
+
 
   update-qa-manifest:
       name: Update Kubernetes Manifest
