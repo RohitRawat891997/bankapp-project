@@ -12,9 +12,6 @@ on:
       - '.github/workflows/ci.yaml'
       - '.github/workflows/cd.yaml'
       - 'terraform/**'
-permissions:
-  contents: write
-  id-token: write
 
 jobs:
   gitleaks-scan:
@@ -242,6 +239,7 @@ jobs:
        - name: Checkout kubernetes branch
          uses: actions/checkout@v4
          with:
+           token: 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
            ref: kubernetes
        - name: Update image tag in manifest
          run: |
