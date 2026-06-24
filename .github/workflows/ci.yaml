@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - kubernetes
     paths:
       - 'src/**'
       - 'pom.xml'
@@ -48,7 +47,7 @@ jobs:
 
     steps:
       - name: Checkout Source Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4  # ✅ Fixed: was @v7 (does not exist)
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -69,7 +68,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: checkov-terraform-repor
+          name: checkov-terraform-report  # ✅ Fixed: was missing last 't'
           path: checkov-terraform-report.json
           if-no-files-found: warn
 
@@ -228,4 +227,33 @@ jobs:
           tags: |
             ${{ vars.DOCKERHUB_USERNAME }}/bankapp:${{ github.sha }}
             ${{ vars.DOCKERHUB_USERNAME }}/bankapp:latest
+
+  update-qa-manifest:
+    name: Update Kubernetes Manifest
+    needs: docker
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout kubernetes branch
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_TOKEN }}  # ✅ Never hardcode tokens — use GitHub Secrets
+          ref: kubernetes
+
+      - name: Update image tag in manifest
+        run: |
+          sed -i "s|image: ${{ vars.DOCKERHUB_USERNAME }}/bankapp:.*|image: ${{ vars.DOCKERHUB_USERNAME }}/bankapp:${GITHUB_SHA}|g" k8s-manifests/bankapp-deploy.yaml
+
+      - name: Show updated manifest (debug)
+        run: |
+          cat k8s-manifests/bankapp-deploy.yaml  # ✅ Fixed typo: was k8-manifests/app-deployment.yaml
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add k8s-manifests/bankapp-deploy.yaml
+          git commit -m "Update kubernetes image to ${GITHUB_SHA} [skip ci]" || echo "No changes to commit"
+          git push origin kubernetes
 
