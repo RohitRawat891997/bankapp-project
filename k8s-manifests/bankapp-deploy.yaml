@@ -31,7 +31,7 @@ spec:
 
       containers:
         - name: bankapp
-          image: rohitrawat891997/bankapp:2cd10059261a08296580eeadf443e6892800de47
+          image: rohitrawat891997/bankapp:5d6828e3badbe262fecce7bcad77a581845c3974
           imagePullPolicy: Always
 
           ports:
