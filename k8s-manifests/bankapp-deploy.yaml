@@ -1,35 +1,36 @@
 # checkov:skip=CKV_K8S_23: Non-root user already set in Dockerfile
-# checkov:skip=CKV_K8S_40: UID set in Dockerfile, enforcing here crashes podapiVersion: apps/v1
+# checkov:skip=CKV_K8S_40: UID set in Dockerfile, enforcing here crashes pod
 
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: bankapp
   namespace: bankapp
+
 spec:
-  replicas: 2
+  replicas: 1
   strategy:
     type: RollingUpdate
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
+
   selector:
     matchLabels:
       app: bankapp
+
   template:
     metadata:
       labels:
         app: bankapp
       annotations:
-        # CKV_K8S_31: seccomp profile set at pod level via annotation (k8s < 1.19 fallback)
         seccomp.security.alpha.kubernetes.io/pod: runtime/default
-    spec:
-      # CKV_K8S_38: Do not auto-mount service account token
-      automountServiceAccountToken: false
 
+    spec:
+      automountServiceAccountToken: false
 
       containers:
         - name: bankapp
-          # CKV_K8S_15: Always pull image to ensure latest digest is used
           image: rohitrawat891997/bankapp:9fc44fd8183ee7f5f01ba7a8d062f6f044888bcc
           imagePullPolicy: Always
 
@@ -42,51 +43,43 @@ spec:
                 configMapKeyRef:
                   name: bankapp-config
                   key: DB_HOST
+
             - name: DB_PORT
               valueFrom:
                 configMapKeyRef:
                   name: bankapp-config
                   key: DB_PORT
+
             - name: DB_NAME
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: MYSQL_DATABASE
+
             - name: DB_USER
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: MYSQL_USER
+
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: mysql-secret
                   key: MYSQL_PASSWORD
 
-
           volumeMounts:
             - name: tmp-volume
               mountPath: /tmp
 
-          startupProbe:
-            httpGet:
-              path: /actuator/health
-              port: 8080
-            failureThreshold: 30
-            periodSeconds: 10
-
           readinessProbe:
-            httpGet:
-              path: /actuator/health
+            tcpSocket:
               port: 8080
-            initialDelaySeconds: 20
             periodSeconds: 10
 
           livenessProbe:
-            httpGet:
-              path: /actuator/health
+            tcpSocket:
               port: 8080
-            initialDelaySeconds: 60
             periodSeconds: 20
 
           resources:
@@ -102,31 +95,33 @@ spec:
           emptyDir: {}
 
 ---
-# CKV2_K8S_6: NetworkPolicy to control pod ingress/egress
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: bankapp-network-policy
   namespace: bankapp
+
 spec:
   podSelector:
     matchLabels:
       app: bankapp
+
   policyTypes:
     - Ingress
     - Egress
+
   ingress:
     - ports:
         - protocol: TCP
           port: 8080
+
   egress:
-    # Allow DNS resolution
     - ports:
         - protocol: UDP
           port: 53
         - protocol: TCP
           port: 53
-    # Allow outbound to MySQL (port 3306)
+
     - ports:
         - protocol: TCP
           port: 3306
