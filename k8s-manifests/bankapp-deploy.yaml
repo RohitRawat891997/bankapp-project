@@ -70,17 +70,7 @@ spec:
 
           volumeMounts:
             - name: tmp-volume
-              mountPath: /tmp
-
-          readinessProbe:
-            tcpSocket:
-              port: 8080
-            periodSeconds: 10
-
-          livenessProbe:
-            tcpSocket:
-              port: 8080
-            periodSeconds: 20
+              mountPath: /tmp        
 
           resources:
             requests:
