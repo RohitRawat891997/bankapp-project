@@ -25,7 +25,7 @@ spec:
     spec:
       containers:
         - name: bankapp
-          image: rohitrawat891997/bankapp:9fc44fd8183ee7f5f01ba7a8d062f6f044888bcc
+          image: rohitrawat891997/bankapp:ed6362d50884ac67e277e144877435ae5c33cd0c
 
           ports:
             - containerPort: 8080
