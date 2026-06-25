@@ -72,21 +72,43 @@ jobs:
           name: checkov-terraform-report  # ✅ Fixed: was missing last 't'
           path: checkov-terraform-report.json
           if-no-files-found: warn
+          
+  checkov-k8s:
+    name: Checkov Kubernetes Scan
+    runs-on: ubuntu-latest
+    needs: gitleaks-scan
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install Checkov
+        run: pip install checkov
+      - name: Run Checkov Kubernetes scan
+        run: |
+          checkov -d . \
+            --framework kubernetes \
+            --output json > checkov-k8s-report.json || true
+      - name: Upload Checkov Kubernetes report
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkov-k8s-report
+          path: checkov-k8s-report.json
+          if-no-files-found: warn
 
   checkov-dockerfile:
     name: Checkov Dockerfile Scan
     runs-on: ubuntu-latest
     needs: gitleaks-scan
-
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Install Checkov
         run: pip install checkov
 
@@ -96,7 +118,6 @@ jobs:
             --framework dockerfile \
             --output json \
             --output-file-path checkov-dockerfile-report.json
-
       - name: Upload Checkov Dockerfile report
         if: always()
         uses: actions/upload-artifact@v4
@@ -113,18 +134,15 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
-
       - name: Install Trivy
         uses: aquasecurity/setup-trivy@v0.2.6
         with:
           version: latest
           cache: true
-
       - name: Verify Trivy installation
         run: |
           trivy --version
           which trivy
-
       - name: Run Trivy FS scan on src (TABLE)
         run: |
           trivy fs ./src \
@@ -132,7 +150,6 @@ jobs:
             --severity HIGH,CRITICAL \
             --ignore-unfixed \
             --exit-code 1 > src-trivy-fs-report.txt
-
       - name: Upload src Trivy TABLE report
         if: always()
         uses: actions/upload-artifact@v4
@@ -147,22 +164,19 @@ jobs:
       - src-trivy-fs
       - checkov-dockerfile
       - checkov-terraform
-
     runs-on: ubuntu-latest
-
     steps:
       - name: Login to Docker Hub
         uses: docker/login-action@v4
         with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
-
+        
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
-
+        
       - name: Build
         uses: docker/build-push-action@v7
         with:
