@@ -1,0 +1,59 @@
+# ============================================
+# .gitignore for Terraform
+# ============================================
+# This file tells Git which files to ignore when committing
+
+# Local .terraform directories
+**/.terraform/*
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Crash dump files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files (they contain sensitive data like passwords)
+*.tfvars
+*.tfvars.json
+
+# Ignore override files (local changes that shouldn't be committed)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc
+
+# Ignore plan files
+*.tfplan
+
+# Ignore backup files
+*.backup
+*.bak
+~*
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.iml
+*.sublime-workspace
+
+# Ignore private key files
+*.pem
+*.key
+!terra-automate-key.pub  # Exception: public key should be committed
+
+# Ignore temporary files
+*.tmp
+*.temp
