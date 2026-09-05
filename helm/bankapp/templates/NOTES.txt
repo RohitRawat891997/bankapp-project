@@ -1,0 +1,22 @@
+1. Get the application endpoint:
+
+   If you installed with ingress enabled and DNS pointing to your ingress controller:
+
+     printf "Waiting for DNS/Ingress...\n"
+     kubectl get ingress -l app.kubernetes.io/name=bankapp -n <namespace>
+
+2. Check TLS certificate (cert-manager):
+
+     kubectl get certificate -n <namespace>
+     kubectl describe certificate <name> -n <namespace>
+
+3. Useful checks:
+
+   - Pods: kubectl get pods -l app.kubernetes.io/name=bankapp -n <namespace>
+   - Service: kubectl get svc -l app.kubernetes.io/name=bankapp -n <namespace>
+   - Logs: kubectl logs deploy/{{ include "bankapp.fullname" . }} -n <namespace>
+
+4. To upgrade image:
+
+   helm upgrade {{ .Release.Name }} ./helm/bankapp -n <namespace> --set app.image.tag=<new-tag>
+
