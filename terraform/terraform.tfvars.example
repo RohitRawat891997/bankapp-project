@@ -1,0 +1,58 @@
+# ============================================
+# terraform.tfvars.example
+# ============================================
+# This is an EXAMPLE file showing how to customize your Terraform deployment
+# 
+# HOW TO USE:
+# 1. Copy this file: cp terraform.tfvars.example terraform.tfvars
+# 2. Edit terraform.tfvars with your desired values
+# 3. Run: terraform plan
+# 4. Run: terraform apply
+#
+# NOTE: terraform.tfvars should be in .gitignore to avoid committing sensitive data
+
+# ============================================
+# Development Environment (Free Tier)
+# ============================================
+# Uncomment the lines below for a free-tier eligible development setup
+
+# aws_region    = "us-east-1"
+# instance_type = "t2.micro"        # Free tier eligible
+# my_environment = "dev"
+# ami_id        = "ami-0f8a61b66d1accaee"  # Amazon Linux 2
+
+
+# ============================================
+# Staging Environment (Small Instance)
+# ============================================
+# Uncomment the lines below for a staging environment with more resources
+
+# aws_region    = "us-east-1"
+# instance_type = "t2.small"        # ~$8/month
+# my_environment = "staging"
+# ami_id        = "ami-0f8a61b66d1accaee"  # Amazon Linux 2
+
+
+# ============================================
+# Production Environment (Medium Instance)
+# ============================================
+# Uncomment the lines below for a production environment
+
+# aws_region    = "us-east-1"
+# instance_type = "t3.medium"       # ~$30/month, better CPU/memory
+# my_environment = "prd"
+# ami_id        = "ami-0f8a61b66d1accaee"  # Amazon Linux 2
+
+
+# ============================================
+# Alternative AWS Regions
+# ============================================
+# Choose your preferred AWS region based on your location/users
+# Common options:
+# - us-east-1      (N. Virginia)      - Default, most services
+# - us-west-2      (Oregon)           - Western US
+# - eu-west-1      (Ireland)          - Europe
+# - ap-southeast-1 (Singapore)        - Asia Pacific
+# - ap-south-1     (Mumbai)           - India
+
+# aws_region = "eu-west-1"
