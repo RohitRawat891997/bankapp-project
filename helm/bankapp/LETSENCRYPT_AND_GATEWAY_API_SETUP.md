@@ -9,7 +9,7 @@ This guide covers the installation and configuration of cert-manager (for Let's 
 1. [Cert-Manager Installation](#cert-manager-installation)
 2. [Let's Encrypt Configuration](#lets-encrypt-configuration)
 3. [Gateway API Installation](#gateway-api-installation)
-4. [Integration with Bankapp Helm Chart](#integration-with-bankapp-helm-chart)
+4. [Complete Deployment Workflow](#complete-deployment-workflow)
 5. [Troubleshooting](#troubleshooting)
 
 ---
@@ -30,17 +30,31 @@ helm repo add jetstack https://charts.jetstack.io
 helm repo update
 ```
 
-### Step 2: Install cert-manager
+### Step 2: Install cert-manager via Helm
 
 ```bash
 # Create namespace for cert-manager
 kubectl create namespace cert-manager
 
-# Install cert-manager with CRDs
+# Install cert-manager with CRDs and recommended security settings
 helm install cert-manager jetstack/cert-manager \
   --namespace cert-manager \
   --version v1.13.0 \
   --set installCRDs=true \
+  --set global.leaderElection.namespace=cert-manager \
+  --set serviceAccount.create=true \
+  --set podSecurityPolicy.enabled=true \
+  --set securityContext.runAsNonRoot=true \
+  --set securityContext.fsGroup=1001 \
+  --set resources.requests.cpu=50m \
+  --set resources.requests.memory=64Mi \
+  --set resources.limits.cpu=200m \
+  --set resources.limits.memory=256Mi \
+  --set cainjector.enabled=true \
+  --set cainjector.replicaCount=1 \
+  --set webhook.enabled=true \
+  --set webhook.replicaCount=1 \
+  --set webhook.securePort=10250 \
   --wait
 ```
 
@@ -54,48 +68,6 @@ kubectl get pods --namespace cert-manager
 # cert-manager-xxx
 # cert-manager-cainjector-xxx
 # cert-manager-webhook-xxx
-```
-
-### Helm Values for Cert-Manager (Optional Enhancement)
-
-If you need custom configuration, create a `cert-manager-values.yaml`:
-
-```yaml
-global:
-  leaderElection:
-    namespace: cert-manager
-
-cert-manager:
-  enabled: true
-  installCRDs: true
-  
-  serviceAccount:
-    create: true
-    name: cert-manager
-  
-  podSecurityPolicy:
-    enabled: true
-  
-  securityContext:
-    runAsNonRoot: true
-    fsGroup: 1001
-  
-  resources:
-    requests:
-      cpu: 50m
-      memory: 64Mi
-    limits:
-      cpu: 200m
-      memory: 256Mi
-
-cainjector:
-  enabled: true
-  replicaCount: 1
-
-webhook:
-  enabled: true
-  replicaCount: 1
-  securePort: 10250
 ```
 
 ---
@@ -158,16 +130,6 @@ kubectl describe clusterissuer letsencrypt-staging
 kubectl describe clusterissuer letsencrypt-prod
 ```
 
-### Step 4: Update Bankapp values.yaml
-
-Update the cert-manager configuration in your `helm/bankapp/values.yaml`:
-
-```yaml
-certManager:
-  enabled: true
-  clusterIssuer: letsencrypt-prod  # Use letsencrypt-staging for testing first
-```
-
 ---
 
 ## Gateway API Installation
@@ -199,7 +161,7 @@ kubectl get crds | grep gateway.networking.k8s.io
 # grpcroutes.gateway.networking.k8s.io
 ```
 
-### Step 3: Install a Gateway Implementation (NGINX)
+### Step 3: Install NGINX Gateway Implementation via Helm
 
 ```bash
 # Add NGINX helm repository
@@ -215,123 +177,14 @@ helm install nginx-gateway ingress-nginx/ingress-nginx \
   --wait
 ```
 
-### Step 4: Create a Gateway Class
-
-Create a file named `gateway-class.yaml`:
-
-```yaml
-apiVersion: gateway.networking.k8s.io/v1
-kind: GatewayClass
-metadata:
-  name: nginx
-spec:
-  controllerName: k8s.io/ingress-nginx
-```
-
-Apply it:
+### Step 4: Verify NGINX Gateway Controller
 
 ```bash
-kubectl apply -f gateway-class.yaml
-```
+# Check if NGINX gateway controller pods are running
+kubectl get pods -n ingress-nginx
 
----
-
-## Integration with Bankapp Helm Chart
-
-### Option 1: Using Traditional Ingress (Recommended for Simple Setup)
-
-Your current `values.yaml` already uses Ingress. Ensure these settings are in place:
-
-```yaml
-ingress:
-  enabled: true
-  ingressClassName: nginx
-  hosts:
-    - host: bankapp.example.com
-      paths:
-        - /
-  tls:
-    - secretName: bankapp-tls
-      hosts:
-        - bankapp.example.com
-
-certManager:
-  enabled: true
-  clusterIssuer: letsencrypt-prod
-```
-
-### Option 2: Using Gateway API (Advanced)
-
-Create a new file `helm/bankapp/templates/gateway.yaml`:
-
-```yaml
-{{- if .Values.gatewayAPI.enabled }}
-apiVersion: gateway.networking.k8s.io/v1
-kind: Gateway
-metadata:
-  name: {{ include "bankapp.fullname" . }}-gateway
-  namespace: {{ .Release.Namespace }}
-spec:
-  gatewayClassName: nginx
-  listeners:
-  - name: http
-    port: 80
-    protocol: HTTP
-    routes:
-      group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      selector:
-        matchLabels:
-          gateway: {{ include "bankapp.fullname" . }}
-  - name: https
-    port: 443
-    protocol: HTTPS
-    tls:
-      certificateRefs:
-      - name: {{ .Values.gatewayAPI.tlsSecretName | default "bankapp-tls" }}
-    routes:
-      group: gateway.networking.k8s.io
-      kind: HTTPRoute
-      selector:
-        matchLabels:
-          gateway: {{ include "bankapp.fullname" . }}
-
----
-apiVersion: gateway.networking.k8s.io/v1
-kind: HTTPRoute
-metadata:
-  name: {{ include "bankapp.fullname" . }}-route
-  namespace: {{ .Release.Namespace }}
-  labels:
-    gateway: {{ include "bankapp.fullname" . }}
-spec:
-  parentRefs:
-  - name: {{ include "bankapp.fullname" . }}-gateway
-    namespace: {{ .Release.Namespace }}
-  hostnames:
-  {{- range .Values.gatewayAPI.hosts }}
-  - {{ . }}
-  {{- end }}
-  rules:
-  - matches:
-    - path:
-        type: PathPrefix
-        value: /
-    backendRefs:
-    - name: {{ include "bankapp.fullname" . }}
-      port: {{ .Values.service.port }}
-{{- end }}
-```
-
-Add to `values.yaml`:
-
-```yaml
-# Gateway API Configuration (optional, for advanced routing)
-gatewayAPI:
-  enabled: false  # Set to true to use Gateway API instead of Ingress
-  hosts:
-    - bankapp.example.com
-  tlsSecretName: bankapp-tls
+# Verify gateway class is available
+kubectl get gatewayclass
 ```
 
 ---
@@ -347,7 +200,19 @@ helm repo update
 helm install cert-manager jetstack/cert-manager \
   --namespace cert-manager \
   --create-namespace \
+  --version v1.13.0 \
   --set installCRDs=true \
+  --set global.leaderElection.namespace=cert-manager \
+  --set serviceAccount.create=true \
+  --set podSecurityPolicy.enabled=true \
+  --set securityContext.runAsNonRoot=true \
+  --set securityContext.fsGroup=1001 \
+  --set resources.requests.cpu=50m \
+  --set resources.requests.memory=64Mi \
+  --set resources.limits.cpu=200m \
+  --set resources.limits.memory=256Mi \
+  --set cainjector.enabled=true \
+  --set webhook.enabled=true \
   --wait
 ```
 
@@ -376,11 +241,36 @@ helm install nginx-ingress ingress-nginx/ingress-nginx \
 INGRESS_IP=$(kubectl get svc -n ingress-nginx nginx-ingress-ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 echo "Point bankapp.example.com to: $INGRESS_IP"
 
-# Deploy bankapp
+# Deploy bankapp with TLS enabled
 helm install bankapp ./helm/bankapp \
-  -n bankapp \
+  --namespace bankapp \
   --create-namespace \
-  -f helm/bankapp/values.yaml
+  --set ingress.enabled=true \
+  --set ingress.ingressClassName=nginx \
+  --set ingress.hosts[0].host=bankapp.example.com \
+  --set ingress.hosts[0].paths[0].path=/ \
+  --set ingress.hosts[0].paths[0].pathType=Prefix \
+  --set ingress.tls[0].secretName=bankapp-tls \
+  --set ingress.tls[0].hosts[0]=bankapp.example.com \
+  --set certManager.enabled=true \
+  --set certManager.clusterIssuer=letsencrypt-prod
+```
+
+**Alternative: Deploy with staging issuer first for testing**
+
+```bash
+helm install bankapp ./helm/bankapp \
+  --namespace bankapp \
+  --create-namespace \
+  --set ingress.enabled=true \
+  --set ingress.ingressClassName=nginx \
+  --set ingress.hosts[0].host=bankapp.example.com \
+  --set ingress.hosts[0].paths[0].path=/ \
+  --set ingress.hosts[0].paths[0].pathType=Prefix \
+  --set ingress.tls[0].secretName=bankapp-tls \
+  --set ingress.tls[0].hosts[0]=bankapp.example.com \
+  --set certManager.enabled=true \
+  --set certManager.clusterIssuer=letsencrypt-staging
 ```
 
 ### Step 5: Monitor Certificate Creation
