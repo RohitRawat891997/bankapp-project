@@ -1,0 +1,6 @@
+# .trivyignore
+CVE-2026-47884  # XsltView not used (Thymeleaf only)
+CVE-2026-47890  # SSE via views not used
+CVE-2026-65182  # Tomcat native auth/constraints not used (Spring Security)
+CVE-2026-65905  # Tomcat DIGEST not used
+CVE-2026-68525  # Tomcat FORM auth not used
