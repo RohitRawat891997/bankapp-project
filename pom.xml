@@ -21,8 +21,10 @@
                 <jacoco.version>0.8.12</jacoco.version>
 
                 <!-- Security overrides for remaining findings -->
-                <tomcat.version>10.1.57</tomcat.version>
-                <spring-framework.version>6.2.19</spring-framework.version>
+                <!-- Upgrade to Tomcat patch that fixes CVE-2026-65182 -->
+                <tomcat.version>10.1.58</tomcat.version>
+                <!-- Upgrade Spring Framework to a patched release that fixes CVE-2026-47884 (6.2.20+) -->
+                <spring-framework.version>6.2.20</spring-framework.version>
                 <spring-data-bom.version>2025.0.12</spring-data-bom.version>
                 <micrometer.version>1.15.12</micrometer.version>
                 <jackson-bom.version>2.21.7</jackson-bom.version>
@@ -63,6 +65,19 @@
                 <dependency>
                         <groupId>org.thymeleaf.extras</groupId>
                         <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+                </dependency>
+
+                <!-- Explicitly override vulnerable transitive dependencies -->
+                <dependency>
+                        <groupId>org.apache.tomcat.embed</groupId>
+                        <artifactId>tomcat-embed-core</artifactId>
+                        <version>${tomcat.version}</version>
+                </dependency>
+
+                <dependency>
+                        <groupId>org.springframework</groupId>
+                        <artifactId>spring-webmvc</artifactId>
+                        <version>${spring-framework.version}</version>
                 </dependency>
 
                 <!-- Renamed artifact; version is managed by Spring Boot -->
