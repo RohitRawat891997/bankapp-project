@@ -23,7 +23,7 @@
                 <!-- Security overrides for remaining findings -->
                 <!-- Upgrade to Tomcat patch that fixes CVE-2026-65182 -->
                 <tomcat.version>10.1.58</tomcat.version>
-                <!-- Upgrade Spring Framework to a patched release that fixes CVE-2026-47884 (6.2.20+) -->
+                <!-- Upgrade Spring Framework to a patched release that fixes CVE-2026-47884 -->
                 <spring-framework.version>6.2.20</spring-framework.version>
                 <spring-data-bom.version>2025.0.12</spring-data-bom.version>
                 <micrometer.version>1.15.12</micrometer.version>
@@ -35,6 +35,29 @@
                 <sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
                 <sonar.language>java</sonar.language>
         </properties>
+
+        <!-- Some Spring Framework patch releases may be published to Spring's release repository; add it so Maven can resolve 6.2.20 -->
+        <repositories>
+                <repository>
+                        <id>spring-releases</id>
+                        <name>Spring Releases</name>
+                        <url>https://repo.spring.io/release</url>
+                        <releases>
+                                <enabled>true</enabled>
+                        </releases>
+                        <snapshots>
+                                <enabled>false</enabled>
+                        </snapshots>
+                </repository>
+        </repositories>
+
+        <pluginRepositories>
+                <pluginRepository>
+                        <id>spring-releases</id>
+                        <name>Spring Releases</name>
+                        <url>https://repo.spring.io/release</url>
+                </pluginRepository>
+        </pluginRepositories>
 
         <dependencies>
                 <dependency>
