@@ -13,29 +13,30 @@ RUN --mount=type=cache,target=/root/.m2 \
 COPY src ./src
 RUN --mount=type=cache,target=/root/.m2 \
     mvn -B clean package -DskipTests \
-    && mv target/*.jar app.jar
-
+    && cp target/*.jar app.jar
 
 # ---------- Runtime Stage ----------
 FROM eclipse-temurin:17-jre-alpine
 
-# Apply latest OS security patches, then create non-root user
+# Apply latest OS security patches, create non-root user, install minimal tool for healthcheck
 RUN apk upgrade --no-cache \
     && addgroup -S spring \
-    && adduser -S spring -G spring
+    && adduser -S spring -G spring \
+    && apk add --no-cache curl \
+    && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
 # Copy jar with correct ownership
-COPY --from=builder --chown=spring:spring /app/app.jar app.jar
+COPY --from=builder --chown=spring:spring /app/app.jar /app/app.jar
 
 USER spring
 
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/actuator/health || exit 1
-
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar app.jar"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD curl --silent --fail http://localhost:8080/actuator/health || exit 1
+
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/app.jar"]
