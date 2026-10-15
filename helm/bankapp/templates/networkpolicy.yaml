@@ -1,0 +1,31 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "bankapp.fullname" . }}-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "bankapp.name" . }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
+
+  policyTypes:
+    - Ingress
+    - Egress
+
+  ingress:
+    - ports:
+        - protocol: TCP
+          port: {{ .Values.service.port }}
+
+  egress:
+    - ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+
+    - ports:
+        - protocol: TCP
+          port: 3306
+{{- end }}

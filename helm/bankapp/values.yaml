@@ -1,0 +1,90 @@
+# Default values for bankapp.
+# This is a sensible production-oriented starting point; override per-environment.
+replicaCount: 2
+
+app:
+  name: bankapp
+  image:
+    repository: rohitrawat891997/bankapp
+    tag: "0c993928e0df1d12b72a6c1eacad148fa1f5880a"
+    pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+resources:
+  requests:
+    cpu: 200m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+# Probes - customize path/port if your app uses different endpoints
+livenessProbe:
+  enabled: true
+  httpGet:
+    path: /health
+    port: 8080
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  enabled: true
+  httpGet:
+    path: /ready
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 3
+
+# Pod security
+securityContext:
+  runAsNonRoot: true
+  fsGroup: 1000
+
+# Config and secret names (chart will reference these)
+db:
+  configMapName: bankapp-config
+  config:
+    DB_HOST: mysql
+    DB_PORT: "3306"
+  secretName: mysql-secret
+
+# Ingress & TLS
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+    - host: bankapp.example.com
+      paths:
+        - /
+  tls:
+    - secretName: bankapp-tls
+      hosts:
+        - bankapp.example.com
+
+certManager:
+  # choose letsencrypt-staging or letsencrypt-prod in your environment
+  clusterIssuer: letsencrypt-staging
+
+# NetworkPolicy enforcement
+networkPolicy:
+  enabled: true
+
+# Autoscaling (disabled by default)
+hpa:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 60
+
+# Horizontal pod autoscaler requires metrics-server / custom metrics
+
+# Extra pod annotations and labels
+podAnnotations: {}
+podLabels: {}
+
+# Namespace to deploy into can be passed via helm CLI -n <namespace>
