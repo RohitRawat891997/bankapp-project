@@ -9,8 +9,10 @@ services:
       MYSQL_DATABASE: ${DB_NAME}
       MYSQL_USER: ${DB_USER}
       MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_PORT: ${DB_PORT}
       MYSQL_RANDOM_ROOT_PASSWORD: "yes"
+
+    ports:
+      - "3306:3306"
 
     volumes:
       - mysql-data:/var/lib/mysql
@@ -46,11 +48,11 @@ services:
     restart: unless-stopped
 
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080/actuator/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s     
+      start_period: 60s
 
     security_opt:
       - no-new-privileges:true
